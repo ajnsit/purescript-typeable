@@ -2,6 +2,7 @@ module Test.Main where
 
 import Prelude
 
+import Data.Either (Either)
 import Effect (Effect)
 import Typeable (class Tag1, class Tag2, class Typeable, Proxy1(..), Proxy2(..), TypeRep, clog, eqTypeRep, typeRep, typerepImpl1, typerepImpl2)
 
@@ -11,6 +12,8 @@ main = do
   clog (eqTypeRep (typeRep :: _ (Array Person2)) typeArrPerson)
   clog (eqTypeRep (typeRep :: _ (Optional Int)) (typeRepFromVal (Some 1)))
   clog (eqTypeRep (typeRep :: _ (Optional Person)) (typeRepFromVal (Some 1)))
+  clog (eqTypeRep (typeRep :: _ (Either Int Person)) (typeRep :: _ (Either Int Person)))
+  clog (typeRep :: _ (Either (Either Int Int) (Optional (Array (Person)))))
   where
     typeArrPerson :: TypeRep (Array Person)
     typeArrPerson = typeRep
