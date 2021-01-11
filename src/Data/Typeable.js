@@ -1,11 +1,13 @@
+// var _tag_id_counter = 1;
+
 exports.typeRepDefault0 = function(t) {
+    // if(t.__uniqueId == undefined) t.__uniqueId = _tag_id_counter++;
     return t;
 };
 
 exports.typeRepFromTag1 = pack('tag1');
 
 exports.showTypeRep = function(t) {
-    console.log(t);
     return "" + t;
 };
 
@@ -53,9 +55,40 @@ exports.eqTypeRep = function(t1) {
     };
 };
 
+// foreign import typeRowToTypeRep :: forall r rl. RL.RowToList r rl => TypeRow rl -> TypeRep (Record r)
+exports.typeRowToTypeRep = function() {
+    return function(trow) {
+        return trow;
+    };
+};
+
+// foreign import typeRowCons :: forall s t rs. SProxy s -> String -> TypeRep t -> TypeRow rs -> TypeRow (RL.Cons s t rs)
+exports.typeRowCons = function(_) {
+    return function(s) {
+        return function(t) {
+            return function(r) {
+                return {record: r.record.concat({field:s,typ:t})};
+            };
+        };
+    };
+};
+
+// foreign import typeRowNil :: TypeRow RL.Nil
+exports.typeRowNil = {record: []};
+
 function eqTypeRepHelper(t1,t2) {
     if(t1.tag0) return t1 === t2;
     if(t1.tag !== t2.tag) return false;
+    if(t1.record) {
+        if(!t2.record) return false;
+        if(t1.record.length !== t2.record.length) return false;
+        for(var i=0; i<t1.record.length;i++) {
+            if( (t1.record[i].field !== t2.record[i].field)
+                || (t1.record[i].typ !== t2.record[i].typ)) return false;
+        }
+        return true;
+    }
+    if(!t1.args) return false;
     if(t1.args.length !== t2.args.length) return false;
     for (var i=0; i<t1.args.length;i++) {
         if(!eqTypeRepHelper(t1.args[i].typeRep, t2.args[i].typeRep)) return false;

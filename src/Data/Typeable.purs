@@ -1,11 +1,15 @@
 module Data.Typeable
 ( TypeRep
 , class Typeable
+, class TypeableRecordFields
+, typeableRecordFields
+, TypeRow
 , typeRep
 , eqT
 , eqTypeRep
 , typeRepFromVal
 , SomeTypeRep(..)
+, wrapSomeTypeRep
 , unwrapSomeTypeRep
 , Proxy0, Proxy1, Proxy2, Proxy3, Proxy4, Proxy5, Proxy6, Proxy7, Proxy8, Proxy9, Proxy10, Proxy11
 , proxy0, proxy1, proxy2, proxy3, proxy4, proxy5, proxy6, proxy7, proxy8, proxy9, proxy10, proxy11
@@ -16,13 +20,16 @@ module Data.Typeable
 import Control.Category (identity)
 import Data.Boolean (otherwise)
 import Data.Either (Either)
-import Data.Exists (Exists, runExists)
+import Data.Exists (Exists, mkExists, runExists)
 import Data.Function ((#))
 import Data.Leibniz (type (~), Leibniz)
 import Data.Maybe (Maybe(..))
 import Data.Ordering (Ordering)
 import Data.Show (class Show)
+import Data.Symbol (class IsSymbol, SProxy(..), reflectSymbol)
 import Data.Unit (Unit)
+import Prim.RowList as RL
+import Type.Data.RowList (RLProxy(..))
 import Unsafe.Coerce (unsafeCoerce)
 
 -- | Indexed TypeReps
@@ -50,6 +57,9 @@ typeRepFromVal _ = typeRep
 
 -- | Unindexed typereps
 data SomeTypeRep = SomeTypeRep (Exists TypeRep)
+
+wrapSomeTypeRep :: forall a. TypeRep a -> SomeTypeRep
+wrapSomeTypeRep t = SomeTypeRep (mkExists t)
 
 -- | Unwrap a TypeRep
 unwrapSomeTypeRep :: forall r. SomeTypeRep -> (forall a. TypeRep a -> r) -> r
@@ -114,6 +124,9 @@ foreign import proxy8FromTag9 :: forall t a. Tag9 t => Typeable a => Proxy8 (t a
 foreign import proxy9FromTag10 :: forall t a. Tag10 t => Typeable a => Proxy9 (t a)
 foreign import proxy10FromTag11 :: forall t a. Tag11 t => Typeable a => Proxy10 (t a)
 
+instance typeableRecord :: (RL.RowToList rs ls, TypeableRecordFields ls) => Typeable (Record rs) where
+  typeRep = typeRowToTypeRep (typeableRecordFields (RLProxy :: _ ls))
+else
 instance tag0FromTag1 :: (Tag1 t, Typeable a) => Typeable (t a) where
   typeRep = typeRepFromTag1
 else
@@ -151,6 +164,32 @@ instance tag10FromTag11 :: (Tag11 t, Typeable a) => Tag10 (t a) where
   tag10 = proxy10FromTag11
 
 -- COMMON INSTANCES
+
+-- TODO: Don't know how to use a Row instead of a RowList here
+data TypeRow (r :: RL.RowList)
+foreign import typeRowToTypeRep :: forall r rl. RL.RowToList r rl => TypeRow rl -> TypeRep (Record r)
+foreign import typeRowNil :: TypeRow RL.Nil
+foreign import typeRowCons :: forall s t rs. SProxy s -> String -> TypeRep t -> TypeRow rs -> TypeRow (RL.Cons s t rs)
+
+-- | A class for records where all fields have `Typeable` instances, used to
+-- | implement the `Typeable` instance for records.
+class TypeableRecordFields rowlist where
+  typeableRecordFields :: RLProxy rowlist -> TypeRow rowlist
+
+instance typeableRecordFieldsNil :: TypeableRecordFields RL.Nil where
+  typeableRecordFields _ = typeRowNil
+
+instance typeableRecordFieldsCons
+    :: ( IsSymbol key
+       , TypeableRecordFields rowlistTail
+       , Typeable focus
+       )
+    => TypeableRecordFields (RL.Cons key focus rowlistTail) where
+  typeableRecordFields _
+    = typeRowCons key (reflectSymbol key) (typeRep :: _ focus) tail
+    where
+      key = SProxy :: _ key
+      tail = typeableRecordFields (RLProxy :: _ rowlistTail)
 
 instance taggedInt :: Tag0 Int where
   tag0 = proxy0

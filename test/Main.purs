@@ -10,22 +10,32 @@ foreign import clog :: forall a. a -> Effect Unit
 
 main :: Effect Unit
 main = do
+  clog (typeRep :: _ {name::String, age::Int})
+  clog (eqTypeRep typeRecord (typeRep :: _ {name::String, age::Int}))
   clog (eqTypeRep (typeRep :: _ Person) typePerson)
   clog (eqTypeRep (typeRep :: _ (Array Person)) typeArrPerson)
   clog (eqTypeRep (typeRep :: _ (Array Person2)) typeArrPerson)
   clog (eqTypeRep (typeRep :: _ (Optional Int)) (typeRepFromVal (Some 1)))
   clog (eqTypeRep (typeRep :: _ (Optional Person)) (typeRepFromVal (Some 1)))
   clog (eqTypeRep (typeRep :: _ (Either Int Person)) (typeRep :: _ (Either Int Person)))
-  clog (typeRep :: _ (Either (Either Int Int) (Optional (Array (Person)))))
+  clog (typeRep :: _ (Int -> Either (Either Int Int) (Optional (Array (Person)))))
   clog (typeRep :: _ (Either (Either Int Int) (Optional (Array (Person)))))
   clog (typeRep :: _ (Either Int Int))
   clog (typeRep :: _ Int)
   clog (typeRep :: _ (Foo Int Int Int))
   where
+    typeRecord :: TypeRep {age::Int, name::String}
+    typeRecord = typeRep
     typeArrPerson :: TypeRep (Array Person)
     typeArrPerson = typeRep
     typePerson :: TypeRep Person
     typePerson = typeRep
+    -- The following should not compile since Break does not have a typeable instance
+    -- typeRecordBreak :: TypeRep {break::Break, name::String}
+    -- typeRecordBreak = typeRep
+
+-- A data type without a typeable instance
+data Break
 
 data Foo a b c = Foo
 instance tag3Foo :: Tag3 Foo where tag3 = proxy3

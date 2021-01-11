@@ -8,9 +8,11 @@ You can edit this file as you like.
   , "effect"
   , "psci-support"
   , "either"
-  , "arrays"
   , "exists"
   , "leibniz"
+  , "prelude"
+  , "tuples"
+  , "arrays"
   ]
 , packages = ./packages.dhall
 , sources = [ "src/**/*.purs", "test/**/*.purs" ]
