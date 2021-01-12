@@ -84,7 +84,7 @@ function eqTypeRepHelper(t1,t2) {
         if(t1.record.length !== t2.record.length) return false;
         for(var i=0; i<t1.record.length;i++) {
             if( (t1.record[i].field !== t2.record[i].field)
-                || (t1.record[i].typ !== t2.record[i].typ)) return false;
+                || !(eqTypeRepHelper(t1.record[i].typ, t2.record[i].typ))) return false;
         }
         return true;
     }
