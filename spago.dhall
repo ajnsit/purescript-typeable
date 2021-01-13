@@ -13,6 +13,7 @@ You can edit this file as you like.
   , "prelude"
   , "tuples"
   , "arrays"
+  , "functors"
   ]
 , packages = ./packages.dhall
 , sources = [ "src/**/*.purs", "test/**/*.purs" ]

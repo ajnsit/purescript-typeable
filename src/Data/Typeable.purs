@@ -7,6 +7,10 @@ module Data.Typeable
 , typeRep
 , eqT
 , eqTypeRep
+, cast
+, gcast
+, gcast1
+, gcast2
 , typeRepFromVal
 , SomeTypeRep(..)
 , wrapSomeTypeRep
@@ -22,8 +26,11 @@ import Data.Boolean (otherwise)
 import Data.Either (Either)
 import Data.Exists (Exists, mkExists, runExists)
 import Data.Function ((#))
-import Data.Leibniz (type (~), Leibniz)
+import Data.Functor (map)
+import Data.Identity (Identity(..))
+import Data.Leibniz (type (~), Leibniz, runLeibniz)
 import Data.Maybe (Maybe(..))
+import Data.Newtype (unwrap)
 import Data.Ordering (Ordering)
 import Data.Show (class Show)
 import Data.Symbol (class IsSymbol, SProxy(..), reflectSymbol)
@@ -47,6 +54,24 @@ eqT :: forall a b. TypeRep a -> TypeRep b -> Maybe (a ~ b)
 eqT ta tb
   | eqTypeRep ta tb = Just (unsafeCoerce (identity :: Leibniz a a))
   | otherwise = Nothing
+
+cast :: forall a b. Typeable a => Typeable b => a -> Maybe b
+cast a = map unwrap (gcast (Identity a))
+
+gcast :: forall m a b. Typeable a => Typeable b => m a -> Maybe (m b)
+gcast a = m # map \f -> runLeibniz f a
+  where
+  m = eqT (typeRep :: _ a) (typeRep :: _ b)
+
+gcast1 :: forall s t a c. Typeable a => Tag1 c => Tag1 s => Tag1 t => c (s a) -> Maybe (c (t a))
+gcast1 a = m # map \f -> runLeibniz f a
+  where
+  m = eqT (typeRep :: _ (s a)) (typeRep :: _ (t a))
+
+gcast2 :: forall s t a b c. Typeable a => Typeable b => Tag1 c => Tag2 s => Tag2 t => c (s a b) -> Maybe (c (t a b))
+gcast2 a = m # map \f -> runLeibniz f a
+  where
+  m = eqT (typeRep :: _ (s a b)) (typeRep :: _ (t a b))
 
 -- | Compare two `TypeRep`, potentially of differing types, for equality
 foreign import eqTypeRep :: forall a b. TypeRep a -> TypeRep b -> Boolean
