@@ -3,6 +3,8 @@ Reified types for Purescript
 
 This is an implementation of indexed typereps for Purescript, similar to the [corresponding implementation in Haskell](https://hackage.haskell.org/package/base-4.10.0.0/docs/Type-Reflection.html#t:TypeRep).
 
+[Slides for a talk about Purescript-Typeable](https://speakerdeck.com/ajnsit/purescript-typeable), presented at the Purescript semi-monthly meetup on 18 January 2021, are available.
+
 ## Data.Typeable
 
 `TypeReps` are values that represent types (i.e. they reify types). When they are *indexed* they have the type itself as a parameter.
