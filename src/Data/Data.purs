@@ -10,14 +10,17 @@ import Control.MonadPlus (class MonadPlus)
 import Data.Array as A
 import Data.CommutativeRing ((+))
 import Data.Const (Const(..))
+import Data.Either (Either(..))
 import Data.Eq ((==))
 import Data.Foldable (foldl)
 import Data.Function (const, ($))
 import Data.Identity (Identity(..))
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Newtype (unwrap)
+import Data.Ordering (Ordering)
 import Data.Tuple (Tuple(..))
-import Data.Typeable (class Tag1, class Typeable, cast)
+import Data.Typeable (class Tag0, class Tag1, class Typeable, cast)
+import Data.Unit (Unit)
 import Unsafe.Coerce (unsafeCoerce)
 
 mkT :: forall a b. Typeable a => Typeable b => (b -> b) -> a -> a
@@ -66,10 +69,6 @@ gfoldl  :: forall a c. Data a => (forall d b. Data d => c (d -> b) -> d -> c b)
                 -- variability is achieved by means of type constructor
                 -- @c@ for the construction of the actual result type.
 gfoldl = let DataDict f = dataDict in f
-
---   ((forall b. Data b => b -> b) -> a -> a)
---   (forall r. (forall b. Data b => b -> r) -> a -> Array r)
---   (forall m. (Monad m => (forall b. Data b => b -> m b) -> a -> m a))
 
 class Typeable a <= Data a where
   dataDict :: DataDict a
@@ -214,17 +213,6 @@ unMp :: forall m x. Mp m x -> m (Tuple x Boolean)
 unMp (Mp f) = f
 
 
-{-
-gmapT :: forall a. Data a => (forall b. Data b => b -> b) -> a -> a
-gmapT = let DataDict f _ _ = dataDict in f
-
-gmapQ :: forall a. Data a => forall r. (forall b. Data b => b -> r) -> a -> Array r
-gmapQ = let DataDict _ f _ = dataDict in f
-
-gmapM :: forall a. Data a => (forall m. Monad m => (forall b. Data b => b -> m b) -> a -> m a)
-gmapM = let DataDict _ _ f = dataDict in f
--}
-
 -- | Left-associative fold operation for constructor applications.
 --
 -- The type of 'gfoldl' is a headache, but operationally it is a simple
@@ -234,40 +222,43 @@ gmapM = let DataDict _ _ f = dataDict in f
 -- suitable for abstract datatypes with no substructures.
 -- gfoldl
 
-{-
 
--- Common instances
 -- TODO: Why do we need `Tag0` here? Instead of `Typeable`.
 instance dataArray :: (Tag0 a, Data a) => Data (Array a) where
-  dataDict = DataDict gmapT' gmapQ' gmapM'
-    where
-    gmapT' :: (forall b. Data b => b -> b) -> Array a -> Array a
-    gmapT' f arr = case A.uncons arr of
-      Nothing -> []
-      Just x -> A.cons (f x.head) (f x.tail)
-    gmapQ' :: forall r. (forall b. Data b => b -> r) -> Array a -> Array r
-    gmapQ' f arr = case A.uncons arr of
-      Nothing -> []
-      Just x -> [f x.head, f x.tail]
-    gmapM' :: forall m. (Monad m => (forall b. Data b => b -> m b) -> Array a -> m (Array a))
-    gmapM' f arr = case A.uncons arr of
-      Nothing -> pure []
-      Just x -> do
-        x' <- f x.head
-        xs' <- f x.tail
-        pure (A.cons x' xs')
+  dataDict = DataDict \k z arr -> case A.uncons arr of
+    Nothing -> z []
+    Just x -> (z A.cons `k` x.head) `k` x.tail
+
+instance dataMaybe :: (Tag0 a, Data a) => Data (Maybe a) where
+  dataDict = DataDict \k z e -> case e of
+    Nothing -> z Nothing
+    Just a -> z Just `k` a
+
+instance dataEither :: (Tag0 a, Tag0 b, Data a, Data b) => Data (Either a b) where
+  dataDict = DataDict \k z e -> case e of
+    Left a -> z Left `k` a
+    Right b -> z Right `k` b
 
 instance dataBoolean :: Data Boolean where
-  dataDict = DataDict gmapT' gmapQ' gmapM'
-    where
-    gmapT' :: (forall b. Data b => b -> b) -> Boolean -> Boolean
-    gmapT' f x = x
-    gmapQ' :: forall r. (forall b. Data b => b -> r) -> Boolean -> Array r
-    gmapQ' f x = []
-    gmapM' :: forall m. (Monad m => (forall b. Data b => b -> m b) -> Boolean -> m Boolean)
-    gmapM' f x = pure x
+  dataDict = DataDict \k z x -> z x
 
--}
+instance dataInt :: Data Int where
+  dataDict = DataDict \k z x -> z x
+
+instance dataNumber :: Data Number where
+  dataDict = DataDict \k z x -> z x
+
+instance dataChar :: Data Char where
+  dataDict = DataDict \k z x -> z x
+
+instance dataString :: Data String where
+  dataDict = DataDict \k z x -> z x
+
+instance dataUnit :: Data Unit where
+  dataDict = DataDict \k z x -> z x
+
+instance dataOrdering :: Data Ordering where
+  dataDict = DataDict \k z x -> z x
 
 -- Combinators
 

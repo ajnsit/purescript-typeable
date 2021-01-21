@@ -225,6 +225,9 @@ instance tag0Boolean :: Tag0 Boolean where
 instance tag0Number :: Tag0 Number where
   tag0 = proxy0
 
+instance tag0Char :: Tag0 Char where
+  tag0 = proxy0
+
 instance tag0String :: Tag0 String where
   tag0 = proxy0
 
@@ -232,6 +235,9 @@ instance tag0Unit :: Tag0 Unit where
   tag0 = proxy0
 
 instance taggedArray :: Tag1 Array where
+  tag1 = proxy1
+
+instance taggedMaybe :: Tag1 Maybe where
   tag1 = proxy1
 
 instance tag2Func :: Tag2 (->) where
