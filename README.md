@@ -65,20 +65,20 @@ unwrapDynamic :: forall a. TypeRep a -> Dynamic t -> Maybe a
 
 It's extremely easy. You just need to create a mechanical `Tag` class instance for your datatype. There are different `Tag` classes for types of different arity.
 
-For example, to derive an instance for a plain data type, use `Tag1` and `proxy1` -
+For example, to derive an instance for a plain data type, use `Tag0` and `proxy0` -
 
 ```purescript
 data Person = Person {name::String, age::Int}
 
-instance tag1Person :: Tag1 Person where t1 = proxy1
+instance tag0Person :: Tag0 Person where t0 = proxy0
 ```
 
-For a data type which takes one type parameter, use `Tag2` and `proxy2`, and so on -
+For a data type which takes one type parameter, use `Tag1` and `proxy1`, and so on -
 
 ```purescript
 data Optional a = Some a | None
 
-instance tag2Optional :: Tag2 Optional where t2 = proxy2
+instance tag1Optional :: Tag1 Optional where t1 = proxy1
 ```
 
 **Don't worry about getting it wrong since the type system will prevent you from writing an invalid instance.**
