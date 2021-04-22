@@ -117,10 +117,10 @@ foreign import proxyTFromTagT :: forall t a. TagT t => Typeable a => ProxyT (t a
 instance typeableRecord :: (RL.RowToList rs ls, TypeableRecordFields ls) => Typeable (Record rs) where
   typeRep = typeRowToTypeRep (typeableRecordFields (RLProxy :: _ ls))
 else
-instance tagTFromTag1 :: (TagT t, Typeable a) => Typeable (t a) where
+instance typeableTag1 :: (TagT t, Typeable a) => Typeable (t a) where
   typeRep = typeRepFromTag1
 else
-instance typeableTagT :: TagT t => Typeable t where
+instance typeableTag0 :: TagT t => Typeable t where
   typeRep = typeRepDefault0
 
 instance tagTFromTagT :: (TagT t, Typeable a) => TagT (t a) where

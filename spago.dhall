@@ -4,22 +4,21 @@ You can edit this file as you like.
 -}
 { name = "typeable"
 , dependencies =
-  [ "effect"
-  , "psci-support"
-  , "either"
-  , "exists"
-  , "leibniz"
-  , "prelude"
-  , "tuples"
-  , "arrays"
+  [ "arrays"
   , "const"
   , "control"
+  , "either"
+  , "exists"
   , "foldable-traversable"
   , "identity"
+  , "leibniz"
   , "maybe"
   , "newtype"
+  , "prelude"
+  , "psci-support"
+  , "tuples"
   , "unsafe-coerce"
   ]
 , packages = ./packages.dhall
-, sources = [ "src/**/*.purs", "test/**/*.purs" ]
+, sources = [ "src/**/*.purs" ]
 }
