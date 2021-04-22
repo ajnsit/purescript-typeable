@@ -15,6 +15,7 @@ module Data.Typeable
 , SomeTypeRep(..)
 , wrapSomeTypeRep
 , unwrapSomeTypeRep
+, eqSomeTypeRep
 , ProxyT, proxyT
 , class TagT, tagT
 ) where
@@ -83,12 +84,17 @@ typeRepFromVal _ = typeRep
 -- | Unindexed typereps
 data SomeTypeRep = SomeTypeRep (Exists TypeRep)
 
+-- | Wrap a TypeRep into a SomeTypeRep
 wrapSomeTypeRep :: forall a. TypeRep a -> SomeTypeRep
 wrapSomeTypeRep t = SomeTypeRep (mkExists t)
 
--- | Unwrap a TypeRep
+-- | Extract a TypeRep from a SomeTypeRep
 unwrapSomeTypeRep :: forall r. SomeTypeRep -> (forall a. TypeRep a -> r) -> r
 unwrapSomeTypeRep (SomeTypeRep e) f = e # runExists f
+
+-- | Compare unindexed typereps
+eqSomeTypeRep :: SomeTypeRep -> SomeTypeRep -> Boolean
+eqSomeTypeRep s1 s2 = unwrapSomeTypeRep s1 \t1 -> unwrapSomeTypeRep s2 \t2 -> eqTypeRep t1 t2
 
 -- MACHINERY + INSTANCES
 
