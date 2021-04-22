@@ -40,9 +40,11 @@ import Type.Data.RowList (RLProxy(..))
 import Unsafe.Coerce (unsafeCoerce)
 
 -- | Indexed TypeReps
+data TypeRep :: forall k. k -> Type
 data TypeRep a
 
 -- | `Typeable` things have a `TypeRep`
+class Typeable :: forall k. k -> Constraint
 class Typeable a where
   typeRep :: TypeRep a
 
@@ -191,7 +193,9 @@ instance tag10FromTag11 :: (Tag11 t, Typeable a) => Tag10 (t a) where
 -- COMMON INSTANCES
 
 -- TODO: Don't know how to use a Row instead of a RowList here
-data TypeRow (r :: RL.RowList)
+-- (r :: RL.RLProxy)
+data TypeRow :: forall k. k -> Type
+data TypeRow r
 foreign import typeRowToTypeRep :: forall r rl. RL.RowToList r rl => TypeRow rl -> TypeRep (Record r)
 foreign import typeRowNil :: TypeRow RL.Nil
 foreign import typeRowCons :: forall s t rs. SProxy s -> String -> TypeRep t -> TypeRow rs -> TypeRow (RL.Cons s t rs)

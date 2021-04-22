@@ -4,8 +4,7 @@ You can edit this file as you like.
 -}
 { name = "typeable"
 , dependencies =
-  [ "console"
-  , "effect"
+  [ "effect"
   , "psci-support"
   , "either"
   , "exists"
@@ -13,7 +12,13 @@ You can edit this file as you like.
   , "prelude"
   , "tuples"
   , "arrays"
-  , "functors"
+  , "const"
+  , "control"
+  , "foldable-traversable"
+  , "identity"
+  , "maybe"
+  , "newtype"
+  , "unsafe-coerce"
   ]
 , packages = ./packages.dhall
 , sources = [ "src/**/*.purs", "test/**/*.purs" ]
