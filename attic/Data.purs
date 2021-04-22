@@ -19,7 +19,7 @@ import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Newtype (unwrap)
 import Data.Ordering (Ordering)
 import Data.Tuple (Tuple(..))
-import Data.Typeable (class TagT, class Typeable, cast)
+import Data.Typeable (class Tag0, class Tag1, class Typeable, cast)
 import Data.Unit (Unit)
 import Unsafe.Coerce (unsafeCoerce)
 
@@ -29,7 +29,7 @@ mkT f = fromMaybe identity (cast f)
 mkQ :: forall a b r. Typeable a => Typeable b => r -> (b -> r) -> a -> r
 mkQ r q a = maybe r q (cast a)
 
-mkM :: forall a b m. Typeable a => Typeable b => Monad m => TagT m => (b -> m b) -> a -> m a
+mkM :: forall a b m. Typeable a => Typeable b => Monad m => Tag1 m => (b -> m b) -> a -> m a
 mkM f = fromMaybe pure (cast f)
 
 -- Purescript can't have cycles in typeclasses
@@ -197,12 +197,10 @@ gmapMo f x = unMp (gfoldl k z x) >>= \(Tuple x' b) ->
 
 
 -- | Type constructor for adding counters to queries
-data Qi :: forall k. Type -> k -> Type
 data Qi q a = Qi Int (Maybe q)
 
 
 -- | The type constructor used in definition of gmapQr
-newtype Qr :: forall k. Type -> k -> Type
 newtype Qr r a = Qr (r -> r)
 
 unQr :: forall r a. Qr r a -> r -> r
@@ -225,42 +223,42 @@ unMp (Mp f) = f
 -- gfoldl
 
 
--- TODO: Why do we need `TagT` here? Instead of `Typeable`.
-instance dataArray :: (TagT a, Data a) => Data (Array a) where
+-- TODO: Why do we need `Tag0` here? Instead of `Typeable`.
+instance dataArray :: (Tag0 a, Data a) => Data (Array a) where
   dataDict = DataDict \k z arr -> case A.uncons arr of
     Nothing -> z []
     Just x -> (z A.cons `k` x.head) `k` x.tail
 
-instance dataMaybe :: (TagT a, Data a) => Data (Maybe a) where
+instance dataMaybe :: (Tag0 a, Data a) => Data (Maybe a) where
   dataDict = DataDict \k z e -> case e of
     Nothing -> z Nothing
     Just a -> z Just `k` a
 
-instance dataEither :: (TagT a, TagT b, Data a, Data b) => Data (Either a b) where
+instance dataEither :: (Tag0 a, Tag0 b, Data a, Data b) => Data (Either a b) where
   dataDict = DataDict \k z e -> case e of
     Left a -> z Left `k` a
     Right b -> z Right `k` b
 
 instance dataBoolean :: Data Boolean where
-  dataDict = DataDict \_ z x -> z x
+  dataDict = DataDict \k z x -> z x
 
 instance dataInt :: Data Int where
-  dataDict = DataDict \_ z x -> z x
+  dataDict = DataDict \k z x -> z x
 
 instance dataNumber :: Data Number where
-  dataDict = DataDict \_ z x -> z x
+  dataDict = DataDict \k z x -> z x
 
 instance dataChar :: Data Char where
-  dataDict = DataDict \_ z x -> z x
+  dataDict = DataDict \k z x -> z x
 
 instance dataString :: Data String where
-  dataDict = DataDict \_ z x -> z x
+  dataDict = DataDict \k z x -> z x
 
 instance dataUnit :: Data Unit where
-  dataDict = DataDict \_ z x -> z x
+  dataDict = DataDict \k z x -> z x
 
 instance dataOrdering :: Data Ordering where
-  dataDict = DataDict \_ z x -> z x
+  dataDict = DataDict \k z x -> z x
 
 -- Combinators
 

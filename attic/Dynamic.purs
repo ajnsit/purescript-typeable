@@ -9,7 +9,6 @@ import Data.Typeable (class Typeable, TypeRep, eqT, typeRep)
 
 -- | A `Dynamic` holds a value `a` in a context `t`
 -- | and forgets the type of `a`
-data Dynamic' :: forall k. (k -> Type) -> k -> Type
 data Dynamic' t a = Dynamic' (TypeRep a) (t a)
 data Dynamic t = Dynamic (Exists (Dynamic' t))
 
