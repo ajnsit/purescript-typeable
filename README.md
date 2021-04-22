@@ -55,7 +55,7 @@ We can wrap a value into a dynamic
 dynamic :: forall a t. Typeable a => t a -> Dynamic t
 ```
 
-We can recover a value out of a dynamics if supply the type we expect to find in the Dynamic
+We can recover the value from a dynamic if supply the type we expect to find in the Dynamic
 
 ```purescript
 unwrapDynamic :: forall a. TypeRep a -> Dynamic t -> Maybe a
@@ -63,27 +63,29 @@ unwrapDynamic :: forall a. TypeRep a -> Dynamic t -> Maybe a
 
 ## Deriving `Typeable` for custom data types
 
-It's extremely easy. You just need to create a mechanical `Tag` class instance for your datatype. There are different `Tag` classes for types of different arity.
+It's extremely easy. You just need to create a mechanical `TagT` class instance for your datatype.
 
-For example, to derive an instance for a plain data type, use `Tag0` and `proxy0` -
+For example -
 
 ```purescript
 data Person = Person {name::String, age::Int}
 
-instance tag0Person :: Tag0 Person where t0 = proxy0
+instance tagTPerson :: TagT Person where tagT = proxyT
 ```
 
-For a data type which takes one type parameter, use `Tag1` and `proxy1`, and so on -
+This is valid even for data types that take parameters. For example -
 
 ```purescript
 data Optional a = Some a | None
 
-instance tag1Optional :: Tag1 Optional where t1 = proxy1
+instance tagTOptional :: TagT Optional where tagT = proxyT
 ```
 
 **Don't worry about getting it wrong since the type system will prevent you from writing an invalid instance.**
 
 > #### CAVEAT
-> *Do not add any extra constraints to the instances*. For example don't do `Foo => Tag1 Person`. This currently cannot be caught by the type checker, but will break typerep comparisons for your data type.
+> *Do not add any extra constraints to the instances*. For example don't do `Foo => TagT Person`. This currently cannot be caught by the type checker, but will break typerep comparisons for your data type.
 
 And that's it! You are done! Now your datatype will have a `Typeable` instance.
+
+Note that you will have typeable instances even for unsaturated types. For example, with the `tagTOptional` instance above, you have instances for `TypeRep (Optional a)` as well as for `TypeRep Optional`.
