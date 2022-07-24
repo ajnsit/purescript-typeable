@@ -75,13 +75,14 @@ data Break
 
 data Foo :: forall k1 k2 k3. k1 -> k2 -> k3 -> Type
 data Foo a b c = Foo
-instance tagFoo :: TagT Foo where tagT = proxyT
+instance taggedFoo :: TagT Foo where
+  tagTDict = { tagT: proxyT }
 
 newtype Person = Person { name :: String, location :: String }
-instance tagTPerson :: TagT Person where tagT = proxyT
+instance TagT Person where tagTDict = { tagT: proxyT }
 
 newtype Person2 = Person2 { name :: String, location :: String }
-instance tagTPerson2 :: TagT Person2 where tagT = proxyT
+instance TagT Person2 where tagTDict = { tagT: proxyT }
 
 data Optional a = None | Some a
-instance tagOptional :: TagT Optional where tagT = proxyT
+instance TagT Optional where tagTDict = { tagT: proxyT }

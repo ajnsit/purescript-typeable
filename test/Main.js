@@ -1,5 +1,5 @@
-exports.clog = function(x) {
-    return function() {
-        console.log(x);
-    };
+export const clog = function (x) {
+  return function () {
+    console.log(x);
+  };
 };

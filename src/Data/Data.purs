@@ -29,7 +29,7 @@ mkT f = fromMaybe identity (cast f)
 mkQ :: forall a b r. Typeable a => Typeable b => r -> (b -> r) -> a -> r
 mkQ r q a = maybe r q (cast a)
 
-mkM :: forall a b m. Typeable a => Typeable b => Monad m => TagT m => (b -> m b) -> a -> m a
+mkM :: forall a b m. Typeable a => Typeable b => Typeable (m a) => Typeable (m b) => Monad m => TagT m => (b -> m b) -> a -> m a
 mkM f = fromMaybe pure (cast f)
 
 -- Purescript can't have cycles in typeclasses
@@ -149,11 +149,9 @@ gmapM f = gfoldl k pure
 gmapMp :: forall m a. Data a => MonadPlus m => (forall d. Data d => d -> m d) -> a -> m a
 
 {-
-
 The type constructor that we use here simply keeps track of the fact
 if we already succeeded for an immediate subterm; see Mp below. To
 this end, we couple the monadic computation with a Boolean.
-
 -}
 
 gmapMp f x = unMp (gfoldl k z x) >>= \(Tuple x' b) ->
@@ -172,13 +170,11 @@ gmapMp f x = unMp (gfoldl k z x) >>= \(Tuple x' b) ->
 gmapMo :: forall m a. Data a => MonadPlus m => (forall d. Data d => d -> m d) -> a -> m a
 
 {-
-
 We use the same pairing trick as for gmapMp,
 i.e., we use an extra Boolean component to keep track of the
 fact whether an immediate subterm was processed successfully.
 However, we cut of mapping over subterms once a first subterm
 was transformed successfully.
-
 -}
 
 gmapMo f x = unMp (gfoldl k z x) >>= \(Tuple x' b) ->
