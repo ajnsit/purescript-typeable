@@ -1,11 +1,11 @@
 // var _tag_id_counter = 1;
 
-export function typeRepDefault0(t) {
+export function typeRepDefault0Impl(t) {
   // if(t.__uniqueId == undefined) t.__uniqueId = _tag_id_counter++;
   return t;
 }
 
-export const typeRepFromTag1 = pack('tagT');
+export const typeRepFromTag1Impl = pack('tagT');
 
 export function showTypeRep(t) {
   return "" + t;
@@ -16,7 +16,7 @@ export const proxyT = tag;
 // Just a JS class, instances of which can be tested for equality
 function tag() { }
 
-export const proxyTFromTagT = pack('tagT');
+export const proxyTFromTagTImpl = pack('tagT');
 
 function pack(tagName) {
   return function(origTag) {
@@ -34,11 +34,9 @@ export function eqTypeRep(t1) {
   };
 }
 
-// foreign import typeRowToTypeRep :: forall r rl. RL.RowToList r rl => TypeRow rl -> TypeRep (Record r)
-export function typeRowToTypeRep() {
-  return function(trow) {
-    return trow;
-  };
+// foreign import typeRowToTypeRepImpl :: forall r rl. RL.RowToList r rl => TypeRow rl -> TypeRep (Record r)
+export function typeRowToTypeRepImpl(trow) {
+  return trow;
 }
 
 // foreign import typeRowCons :: forall s t rs. SProxy s -> String -> TypeRep t -> TypeRow rs -> TypeRow (RL.Cons s t rs)
