@@ -1,24 +1,26 @@
 module Data.Typeable
-( TypeRep
-, class Typeable
-, class TypeableRecordFields
-, typeableRecordFields
-, TypeRow
-, typeRep
-, eqT
-, eqTypeRep
-, cast
-, gcast
-, gcast1
-, gcast2
-, typeRepFromVal
-, SomeTypeRep(..)
-, wrapSomeTypeRep
-, unwrapSomeTypeRep
-, eqSomeTypeRep
-, ProxyT, proxyT
-, class TagT, tagT
-) where
+  ( TypeRep
+  , class Typeable
+  , class TypeableRecordFields
+  , typeableRecordFields
+  , TypeRow
+  , typeRep
+  , eqT
+  , eqTypeRep
+  , cast
+  , gcast
+  , gcast1
+  , gcast2
+  , typeRepFromVal
+  , SomeTypeRep(..)
+  , wrapSomeTypeRep
+  , unwrapSomeTypeRep
+  , eqSomeTypeRep
+  , ProxyT
+  , proxyT
+  , class TagT
+  , tagT
+  ) where
 
 import Control.Category (identity)
 import Data.Boolean (otherwise)
@@ -107,20 +109,19 @@ foreign import showTypeRep :: forall a. TypeRep a -> String
 data ProxyT :: forall k. k -> Type
 data ProxyT t
 
-foreign import proxyT  :: forall t. ProxyT t
+foreign import proxyT :: forall t. ProxyT t
 
 class TagT :: forall k. k -> Constraint
-class TagT  a where tagT :: ProxyT a
+class TagT a where
+  tagT :: ProxyT a
 
 foreign import proxyTFromTagT :: forall t a. TagT t => Typeable a => ProxyT (t a)
 
 instance typeableRecord :: (RL.RowToList rs ls, TypeableRecordFields ls) => Typeable (Record rs) where
   typeRep = typeRowToTypeRep (typeableRecordFields (RLProxy :: _ ls))
-else
-instance typeableTag1 :: (TagT t, Typeable a) => Typeable (t a) where
+else instance typeableTag1 :: (TagT t, Typeable a) => Typeable (t a) where
   typeRep = typeRepFromTag1
-else
-instance typeableTag0 :: TagT t => Typeable t where
+else instance typeableTag0 :: TagT t => Typeable t where
   typeRep = typeRepDefault0
 
 instance tagTFromTagT :: (TagT t, Typeable a) => TagT (t a) where
@@ -132,6 +133,7 @@ instance tagTFromTagT :: (TagT t, Typeable a) => TagT (t a) where
 -- (r :: RL.RLProxy)
 data TypeRow :: forall k. k -> Type
 data TypeRow r
+
 foreign import typeRowToTypeRep :: forall r rl. RL.RowToList r rl => TypeRow rl -> TypeRep (Record r)
 foreign import typeRowNil :: TypeRow RL.Nil
 foreign import typeRowCons :: forall s t rs. SProxy s -> String -> TypeRep t -> TypeRow rs -> TypeRow (RL.Cons s t rs)
@@ -144,17 +146,16 @@ class TypeableRecordFields rowlist where
 instance typeableRecordFieldsNil :: TypeableRecordFields RL.Nil where
   typeableRecordFields _ = typeRowNil
 
-instance typeableRecordFieldsCons
-    :: ( IsSymbol key
-       , TypeableRecordFields rowlistTail
-       , Typeable focus
-       )
-    => TypeableRecordFields (RL.Cons key focus rowlistTail) where
-  typeableRecordFields _
-    = typeRowCons key (reflectSymbol key) (typeRep :: _ focus) tail
+instance typeableRecordFieldsCons ::
+  ( IsSymbol key
+  , TypeableRecordFields rowlistTail
+  , Typeable focus
+  ) =>
+  TypeableRecordFields (RL.Cons key focus rowlistTail) where
+  typeableRecordFields _ = typeRowCons key (reflectSymbol key) (typeRep :: _ focus) tail
     where
-      key = SProxy :: _ key
-      tail = typeableRecordFields (RLProxy :: _ rowlistTail)
+    key = SProxy :: _ key
+    tail = typeableRecordFields (RLProxy :: _ rowlistTail)
 
 instance taggedInt :: TagT Int where
   tagT = proxyT

@@ -36,38 +36,42 @@ mkM f = fromMaybe pure (cast f)
 -- So we manually reify the dictionary into the DataDict datatype
 -- Not using wrapped records here because Purescript can't handle constraints inside records
 newtype DataDict a = DataDict
-  (forall c. (forall d b. Data d => c (d -> b) -> d -> c b)
-      -- ^ defines how nonempty constructor applications are
-      -- folded.  It takes the folded tail of the constructor
-      -- application and its head, i.e., an immediate subterm,
-      -- and combines them in some way.
-  -> (forall g. g -> c g)
-      -- ^ defines how the empty constructor application is
-      -- folded, like the neutral \/ start element for list
-      -- folding.
-  -> a
-      -- ^ structure to be folded.
-  -> c a
-      -- ^ result, with a type defined in terms of @a@, but
-      -- variability is achieved by means of type constructor
-      -- @c@ for the construction of the actual result type.
+  ( forall c
+     . (forall d b. Data d => c (d -> b) -> d -> c b)
+    -- ^ defines how nonempty constructor applications are
+    -- folded.  It takes the folded tail of the constructor
+    -- application and its head, i.e., an immediate subterm,
+    -- and combines them in some way.
+    -> (forall g. g -> c g)
+    -- ^ defines how the empty constructor application is
+    -- folded, like the neutral \/ start element for list
+    -- folding.
+    -> a
+    -- ^ structure to be folded.
+    -> c a
+  -- ^ result, with a type defined in terms of @a@, but
+  -- variability is achieved by means of type constructor
+  -- @c@ for the construction of the actual result type.
   )
 
-gfoldl  :: forall a c. Data a => (forall d b. Data d => c (d -> b) -> d -> c b)
-                -- ^ defines how nonempty constructor applications are
-                -- folded.  It takes the folded tail of the constructor
-                -- application and its head, i.e., an immediate subterm,
-                -- and combines them in some way.
-          -> (forall g. g -> c g)
-                -- ^ defines how the empty constructor application is
-                -- folded, like the neutral \/ start element for list
-                -- folding.
-          -> a
-                -- ^ structure to be folded.
-          -> c a
-                -- ^ result, with a type defined in terms of @a@, but
-                -- variability is achieved by means of type constructor
-                -- @c@ for the construction of the actual result type.
+gfoldl
+  :: forall a c
+   . Data a
+  => (forall d b. Data d => c (d -> b) -> d -> c b)
+  -- ^ defines how nonempty constructor applications are
+  -- folded.  It takes the folded tail of the constructor
+  -- application and its head, i.e., an immediate subterm,
+  -- and combines them in some way.
+  -> (forall g. g -> c g)
+  -- ^ defines how the empty constructor application is
+  -- folded, like the neutral \/ start element for list
+  -- folding.
+  -> a
+  -- ^ structure to be folded.
+  -> c a
+-- ^ result, with a type defined in terms of @a@, but
+-- variability is achieved by means of type constructor
+-- @c@ for the construction of the actual result type.
 gfoldl = let DataDict f = dataDict in f
 
 class Typeable a <= Data a where
@@ -86,26 +90,25 @@ gmapT :: forall a. Data a => (forall b. Data b => b -> b) -> a -> a
 --
 gmapT f x0 = unwrap (gfoldl k Identity x0)
   where
-    k :: forall d b. Data d => Identity (d->b) -> d -> Identity b
-    k (Identity c) x = Identity (c (f x))
-
+  k :: forall d b. Data d => Identity (d -> b) -> d -> Identity b
+  k (Identity c) x = Identity (c (f x))
 
 -- | A generic query with a left-associative binary operator
 gmapQl :: forall a r r'. Data a => (r -> r' -> r) -> r -> (forall d. Data d => d -> r') -> a -> r
 gmapQl o r f = unwrap <<< gfoldl k z
   where
-    k :: forall d b. Data d => Const r (d->b) -> d -> Const r b
-    k c x = Const $ (unwrap c) `o` f x
-    z :: forall g. g -> Const r g
-    z _   = Const r
+  k :: forall d b. Data d => Const r (d -> b) -> d -> Const r b
+  k c x = Const $ (unwrap c) `o` f x
+
+  z :: forall g. g -> Const r g
+  z _ = Const r
 
 -- | A generic query with a right-associative binary operator
 gmapQr :: forall a r r'. Data a => (r' -> r -> r) -> r -> (forall d. Data d => d -> r') -> a -> r
 gmapQr o r0 f x0 = unQr (gfoldl k (const (Qr identity)) x0) r0
   where
-    k :: forall d b. Data d => Qr r (d->b) -> d -> Qr r b
-    k (Qr c) x = Qr (\r -> c (f x `o` r))
-
+  k :: forall d b. Data d => Qr r (d -> b) -> d -> Qr r b
+  k (Qr c) x = Qr (\r -> c (f x `o` r))
 
 -- | A generic query that processes the immediate subterms and returns a list
 -- of results.  The list is given in the same order as originally specified
@@ -113,18 +116,18 @@ gmapQr o r0 f x0 = unQr (gfoldl k (const (Qr identity)) x0) r0
 gmapQ :: forall a u. Data a => (forall d. Data d => d -> u) -> a -> Array u
 gmapQ f = gmapQr (A.cons) [] f
 
-
 -- | A generic query that processes one child by index (zero-based)
 gmapQi :: forall u a. Data a => Int -> (forall d. Data d => d -> u) -> a -> u
-gmapQi i f x = case gfoldl k z x of Qi _ q -> case q of
-                                                   Nothing -> unsafeCoerce "UNEXPECTED NOTHING"
-                                                   Just q' -> q'
+gmapQi i f x = case gfoldl k z x of
+  Qi _ q -> case q of
+    Nothing -> unsafeCoerce "UNEXPECTED NOTHING"
+    Just q' -> q'
   where
-    k :: forall d b. Data d => Qi u (d -> b) -> d -> Qi u b
-    k (Qi i' q) a = Qi (i'+1) (if i==i' then Just (f a) else q)
-    z :: forall g q. g -> Qi q g
-    z _           = Qi 0 Nothing
+  k :: forall d b. Data d => Qi u (d -> b) -> d -> Qi u b
+  k (Qi i' q) a = Qi (i' + 1) (if i == i' then Just (f a) else q)
 
+  z :: forall g q. g -> Qi q g
+  z _ = Qi 0 Nothing
 
 -- | A generic monadic transformation that maps over the immediate subterms
 --
@@ -139,11 +142,11 @@ gmapM :: forall m a. Data a => Monad m => (forall d. Data d => d -> m d) -> a ->
 --
 gmapM f = gfoldl k pure
   where
-    k :: forall b d. Data d => m (d -> b) -> d -> m b
-    k c x = do c' <- c
-               x' <- f x
-               pure (c' x')
-
+  k :: forall b d. Data d => m (d -> b) -> d -> m b
+  k c x = do
+    c' <- c
+    x' <- f x
+    pure (c' x')
 
 -- | Transformation of at least one immediate subterm does not fail
 gmapMp :: forall m a. Data a => MonadPlus m => (forall d. Data d => d -> m d) -> a -> m a
@@ -157,16 +160,17 @@ this end, we couple the monadic computation with a Boolean.
 -}
 
 gmapMp f x = unMp (gfoldl k z x) >>= \(Tuple x' b) ->
-              if b then pure x' else empty
+  if b then pure x' else empty
   where
-    z :: forall g. g -> Mp m g
-    z g = Mp (pure (Tuple g false))
-    k :: forall d b. Data d => Mp m (d -> b) -> d -> Mp m b
-    k (Mp c) y
-      = Mp ( c >>= \(Tuple h b) ->
-               (f y >>= \y' -> pure (Tuple (h y') true))
-               <|> pure (Tuple (h y) b)
-           )
+  z :: forall g. g -> Mp m g
+  z g = Mp (pure (Tuple g false))
+
+  k :: forall d b. Data d => Mp m (d -> b) -> d -> Mp m b
+  k (Mp c) y = Mp
+    ( c >>= \(Tuple h b) ->
+        (f y >>= \y' -> pure (Tuple (h y') true))
+          <|> pure (Tuple (h y) b)
+    )
 
 -- | Transformation of one immediate subterm with success
 gmapMo :: forall m a. Data a => MonadPlus m => (forall d. Data d => d -> m d) -> a -> m a
@@ -182,24 +186,22 @@ was transformed successfully.
 -}
 
 gmapMo f x = unMp (gfoldl k z x) >>= \(Tuple x' b) ->
-              if b then pure x' else empty
+  if b then pure x' else empty
   where
-    z :: forall g. g -> Mp m g
-    z g = Mp (pure (Tuple g false))
-    k :: forall d b. Data d => Mp m (d -> b) -> d -> Mp m b
-    k (Mp c) y
-      = Mp ( c >>= \(Tuple h b) -> if b
-                      then pure (Tuple (h y) b)
-                      else (f y >>= \y' -> pure (Tuple (h y') true))
-                           <|> pure (Tuple (h y) b)
-           )
+  z :: forall g. g -> Mp m g
+  z g = Mp (pure (Tuple g false))
 
-
+  k :: forall d b. Data d => Mp m (d -> b) -> d -> Mp m b
+  k (Mp c) y = Mp
+    ( c >>= \(Tuple h b) ->
+        if b then pure (Tuple (h y) b)
+        else (f y >>= \y' -> pure (Tuple (h y') true))
+          <|> pure (Tuple (h y) b)
+    )
 
 -- | Type constructor for adding counters to queries
 data Qi :: forall k. Type -> k -> Type
 data Qi q a = Qi Int (Maybe q)
-
 
 -- | The type constructor used in definition of gmapQr
 newtype Qr :: forall k. Type -> k -> Type
@@ -214,7 +216,6 @@ newtype Mp m x = Mp (m (Tuple x Boolean))
 unMp :: forall m x. Mp m x -> m (Tuple x Boolean)
 unMp (Mp f) = f
 
-
 -- | Left-associative fold operation for constructor applications.
 --
 -- The type of 'gfoldl' is a headache, but operationally it is a simple
@@ -223,7 +224,6 @@ unMp (Mp f) = f
 -- The default definition for 'gfoldl' is @'const' 'id'@, which is
 -- suitable for abstract datatypes with no substructures.
 -- gfoldl
-
 
 -- TODO: Why do we need `TagT` here? Instead of `Typeable`.
 instance dataArray :: (TagT a, Data a) => Data (Array a) where
