@@ -15,7 +15,6 @@ You can edit this file as you like.
   , "maybe"
   , "newtype"
   , "prelude"
-  , "psci-support"
   , "tuples"
   , "unsafe-coerce"
   ]

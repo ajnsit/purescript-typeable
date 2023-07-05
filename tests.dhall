@@ -9,7 +9,6 @@ You can edit this file as you like.
   , "either"
   , "exceptions"
   , "prelude"
-  , "psci-support"
   , "spec"
   , "transformers"
   , "typeable"
