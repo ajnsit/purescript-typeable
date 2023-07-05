@@ -4,10 +4,11 @@ import Prelude
 
 import Control.Monad.Error.Class (class MonadThrow)
 import Data.Either (Either)
-import Data.Typeable (class TagT, TypeRep, eqTypeRep, proxyT, typeRep, typeRepFromVal)
+import Data.Typeable (class TagT, eqTypeRep, proxyT, typeRep, typeRepFromVal)
 import Effect (Effect)
 import Effect.Aff (launchAff_)
 import Effect.Exception (Error)
+import Test.Person (Person, typeArrPerson, typePerson)
 import Test.Spec (describe, it)
 import Test.Spec.Assertions (shouldEqual)
 import Test.Spec.Reporter.Console (consoleReporter)
@@ -29,12 +30,13 @@ main = do
         deny $ eqTypeRep (typeRep :: _ Int) (typeRep :: _ Char)
       it "can handle unsaturated types" do
         assert $ eqTypeRep (typeRep :: _ Array) (typeRep :: _ Array)
+        assert $ eqTypeRep (typeRep :: _ Optional) (typeRep :: _ Optional)
+        deny $ eqTypeRep (typeRep :: _ (Optional Int)) (typeRep :: _ (Optional Char))
       it "can handle mixed arity" do
         deny $ eqTypeRep (typeRep :: _ Array) (typeRep :: _ Person)
       it "can handle user defined data types" do
         assert $ eqTypeRep (typeRep :: _ Person) typePerson
-        assert $ eqTypeRep (typeRep :: _ Optional) (typeRep :: _ Optional)
-        deny $ eqTypeRep (typeRep :: _ (Optional Int)) (typeRep :: _ (Optional Char))
+        assert $ eqTypeRep (typeRep :: _ Person) (typeRep :: _ Person)
       it "can distinguish between distinct types with matching fields" do
         deny $ eqTypeRep (typeRep :: _ Person) (typeRep :: _ Person2)
       it "can handle nested types" do
@@ -47,45 +49,27 @@ main = do
         assert $ eqTypeRep (typeRep :: _ (Optional Int)) (typeRepFromVal (Some 1))
         deny $ eqTypeRep (typeRep :: _ (Optional Person)) (typeRepFromVal (Some 1))
 
-  clog (eqTypeRep (typeRep :: _ Int) (typeRep :: _ Char))
-  clog (eqTypeRep (typeRep :: _ Int) (typeRep :: _ Int))
-  clog (typeRep :: _ Char)
-  clog (typeRep :: _ Int)
+-- clog (eqTypeRep (typeRep :: _ Int) (typeRep :: _ Char))
+-- clog (eqTypeRep (typeRep :: _ Int) (typeRep :: _ Int))
+-- clog (typeRep :: _ Char)
+-- clog (typeRep :: _ Int)
 
-  clog (typeRep :: _ Array)
-  -- clog (typeRep :: _ { name :: String, age :: Int })
-  clog (typeRep :: _ (Int -> Either (Either Int Int) (Optional (Array (Person)))))
-  clog (typeRep :: _ (Either (Either Int Int) (Optional (Array (Person)))))
-  clog (typeRep :: _ (Either Int Int))
-  clog (typeRep :: _ (Foo Int Int Int))
+-- clog (typeRep :: _ Array)
+-- clog (typeRep :: _ { name :: String, age :: Int })
+-- clog (typeRep :: _ (Int -> Either (Either Int Int) (Optional (Array (Person)))))
+-- clog (typeRep :: _ (Either (Either Int Int) (Optional (Array (Person)))))
+-- clog (typeRep :: _ (Either Int Int))
 
-  where
-  -- typeRecord :: TypeRep { age :: Int, name :: String }
-  -- typeRecord = typeRep
+-- where
+-- typeRecord :: TypeRep { age :: Int, name :: String }
+-- typeRecord = typeRep
 
-  typeArrPerson :: TypeRep (Array Person)
-  typeArrPerson = typeRep
+-- -- A data type without a typeable instance
+-- data Break
 
-  typePerson :: TypeRep Person
-  typePerson = typeRep
-
--- The following should not compile since Break does not have a typeable instance
+-- -- The following should not compile since Break does not have a typeable instance
 -- typeRecordBreak :: TypeRep {break::Break, name::String}
 -- typeRecordBreak = typeRep
-
--- A data type without a typeable instance
-data Break
-
-data Foo :: forall k1 k2 k3. k1 -> k2 -> k3 -> Type
-data Foo a b c = Foo
-
-instance tagFoo :: TagT Foo where
-  tagT = proxyT
-
-newtype Person = Person { name :: String, location :: String }
-
-instance tagTPerson :: TagT Person where
-  tagT = proxyT
 
 newtype Person2 = Person2 { name :: String, location :: String }
 
