@@ -4,7 +4,7 @@ import Prelude
 
 import Control.Monad.Error.Class (class MonadThrow)
 import Data.Either (Either)
-import Data.Typeable (class TagT, TypeRep, eqTypeRep, proxyT, typeRep, typeRepFromVal)
+import Data.Typeable (class Tagged, TypeRep, eqTypeRep, makeTag, typeRep, typeRepFromVal)
 import Effect (Effect)
 import Effect.Aff (launchAff_)
 import Effect.Exception (Error)
@@ -49,17 +49,6 @@ main = do
         assert $ eqTypeRep (typeRep :: _ (Optional Int)) (typeRepFromVal (Some 1))
         deny $ eqTypeRep (typeRep :: _ (Optional Person)) (typeRepFromVal (Some 1))
 
-  -- clog (eqTypeRep (typeRep :: _ Int) (typeRep :: _ Char))
-  -- clog (eqTypeRep (typeRep :: _ Int) (typeRep :: _ Int))
-  -- clog (typeRep :: _ Char)
-  -- clog (typeRep :: _ Int)
-
-  -- clog (typeRep :: _ Array)
-  -- clog (typeRep :: _ { name :: String, age :: Int })
-  -- clog (typeRep :: _ (Int -> Either (Either Int Int) (Optional (Array (Person)))))
-  -- clog (typeRep :: _ (Either (Either Int Int) (Optional (Array (Person)))))
-  -- clog (typeRep :: _ (Either Int Int))
-
   where
   typeRecord :: TypeRep { age :: Int, name :: String }
   typeRecord = typeRep
@@ -73,10 +62,10 @@ main = do
 
 newtype Person2 = Person2 { name :: String, location :: String }
 
-instance tagTPerson2 :: TagT Person2 where
-  tagT = proxyT
+instance tagPerson2 :: Tagged Person2 where
+  tag = makeTag unit
 
 data Optional a = None | Some a
 
-instance tagOptional :: TagT Optional where
-  tagT = proxyT
+instance tagOptional :: Tagged Optional where
+  tag = makeTag unit

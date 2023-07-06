@@ -1,11 +1,12 @@
 module Test.Person where
 
-import Data.Typeable (class TagT, TypeRep, proxyT, typeRep)
+import Data.Typeable (class Tagged, TypeRep, makeTag, typeRep)
+import Data.Unit (unit)
 
 newtype Person = Person { name :: String, location :: String }
 
-instance tagTPerson :: TagT Person where
-  tagT = proxyT
+instance taggedPerson :: Tagged Person where
+  tag = makeTag unit
 
 typePerson :: TypeRep Person
 typePerson = typeRep

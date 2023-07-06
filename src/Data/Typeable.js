@@ -1,29 +1,19 @@
-// var _tag_id_counter = 1;
-
-export function typeRepDefault0Impl(t) {
-  return t;
-}
-
-export const typeRepFromTag1Impl = pack('tagT');
 
 export function showTypeRep(t) {
   return "" + t;
 }
 
-export const proxyT = tag;
-
 // Just a JS class, instances of which can be tested for equality
-function tag() { }
+function Tag() { }
 
-export const proxyTFromTagTImpl = pack('tagT');
+export function makeTag(_) {
+  return new Tag();
+}
 
-function pack(tagName) {
-  return function(origTag) {
-    let unwrappedTag = origTag[tagName];
-    return function(typeRep) {
-      if (unwrappedTag.tag) return { tag: unwrappedTag.tag, args: unwrappedTag.args.concat(typeRep) };
-      return { tag: origTag, args: [typeRep] };
-    };
+export function tag1Impl(origTag) {
+  return function(typeRep) {
+    if (origTag instanceof Tag) return { tag: origTag, args: [typeRep] };
+    else return { tag: origTag.tag, args: origTag.args.concat(typeRep) };
   };
 };
 
@@ -52,7 +42,6 @@ export function typeRowCons(_) {
 export const typeRowNil = { record: [] };
 
 function eqTypeRepHelper(t1, t2) {
-  if (t1.tagT) return t1 === t2;
   if (t1.record) {
     if (!t2.record) return false;
     if (t1.record.length !== t2.record.length) return false;
@@ -62,8 +51,8 @@ function eqTypeRepHelper(t1, t2) {
     }
     return true;
   }
-  if (!t1.args) return false;
-  if (t1.args.length !== t2.args.length) return false;
+  if (t1 instanceof Tag) return t1 === t2;
+  if (t1.tag !== t2.tag || t1.args.length !== t2.args.length) return false;
   for (var i = 0; i < t1.args.length; i++) {
     if (!eqTypeRepHelper(t1.args[i], t2.args[i])) return false;
   }

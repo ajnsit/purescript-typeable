@@ -17,10 +17,11 @@ module Data.Typeable
   , unwrapSomeTypeRep
   , runSomeTypeRep
   , eqSomeTypeRep
-  , ProxyT
-  , proxyT
-  , class TagT
-  , tagT
+  , typeRepFromTag
+  , Tag
+  , makeTag
+  , class Tagged
+  , tag
   ) where
 
 import Control.Category (identity)
@@ -35,7 +36,7 @@ import Data.Newtype (unwrap)
 import Data.Ordering (Ordering)
 import Data.Show (class Show)
 import Data.Symbol (class IsSymbol, reflectSymbol)
-import Data.Unit (Unit)
+import Data.Unit (Unit, unit)
 import Prim.RowList as RL
 import Type.Proxy (Proxy(..))
 import Unsafe.Coerce (unsafeCoerce)
@@ -106,60 +107,42 @@ unwrapSomeTypeRep t f = runSomeTypeRep f t
 eqSomeTypeRep :: SomeTypeRep -> SomeTypeRep -> Boolean
 eqSomeTypeRep s1 s2 = unwrapSomeTypeRep s1 \t1 -> unwrapSomeTypeRep s2 \t2 -> eqTypeRep t1 t2
 
+-- | Every Tag can be converted to the corresponding TypeRep
+typeRepFromTag :: forall a. Tag a -> TypeRep a
+typeRepFromTag = unsafeCoerce
+
 -- MACHINERY + INSTANCES
 
--- Coerce must have a type sig, and must not be inlined else it won't get passed the dicts
-coerceTagDict :: forall a r. (TagTDict a -> r) -> (TagT a => r)
-coerceTagDict = unsafeCoerce
-
--- HACK: For https://github.com/purescript/purescript/pull/4240
-typeRepDefault0 :: forall a. TagT a => TypeRep a
-typeRepDefault0 = coerceTagDict typeRepDefault0Impl
-
--- typeRepDefaultImpl :: forall a. TagT a => TypeRep a
-foreign import typeRepDefault0Impl :: forall a. TagTDict a -> TypeRep a
-
--- HACK: For https://github.com/purescript/purescript/pull/4240
-typeRepFromTag1 :: forall a b. TagT a => Typeable b => TypeRep (a b)
-typeRepFromTag1 = coerceTagDict typeRepFromTag1Impl typeRep
-
--- typeRepFromTag1Impl :: forall a b. TagT a => Typeable b => TypeRep (a b)
-foreign import typeRepFromTag1Impl :: forall a b. TagTDict a -> TypeRep b -> TypeRep (a b)
+typeRepFromTag1 :: forall a b. Tagged a => Typeable b => TypeRep (a b)
+typeRepFromTag1 = typeRepFromTag (tag1Impl tag typeRep)
 
 foreign import showTypeRep :: forall a. TypeRep a -> String
 
--- Tagging types, this is basically the same as `Type.Proxy`
--- but we don't want to export any constructors
-data ProxyT :: forall k. k -> Type
-data ProxyT t
+-- | An Opaque Tag type
+foreign import data Tag :: forall k. k -> Type
 
-foreign import proxyT :: forall t. ProxyT t
+-- | This is the only way to create Tags
+-- | It's a function so that it can never be inlined by the compiler.
+-- | This function returns unique values that are never equal.
+foreign import makeTag :: forall t. Unit -> Tag t
 
 -- | This class should only be used to specify instances for your own datatypes to automatically get Typeable instances
--- | It's never necessary to use TagT as a constraint in order to use Typeable
-class TagT :: forall k. k -> Constraint
-class TagT a where
-  tagT :: ProxyT a
+-- | It's never necessary to use Tagged as a constraint in order to use Typeable
+class Tagged :: forall k. k -> Constraint
+class Tagged a where
+  tag :: Tag a
 
-data TagTDict :: forall k. k -> Type
-data TagTDict t
-
--- HACK: For https://github.com/purescript/purescript/pull/4240
-proxyTFromTagT :: forall t a. TagT t => Typeable a => ProxyT (t a)
-proxyTFromTagT = coerceTagDict proxyTFromTagTImpl typeRep
-
--- foreign import proxyTFromTagTImpl :: forall t a. TagT t => Typeable a => ProxyT (t a)
-foreign import proxyTFromTagTImpl :: forall t a. TagTDict t -> TypeRep a -> ProxyT (t a)
+foreign import tag1Impl :: forall t a. Tag t -> TypeRep a -> Tag (t a)
 
 instance typeableRecord :: (RL.RowToList rs ls, TypeableRecordFields ls) => Typeable (Record rs) where
   typeRep = typeRowToTypeRep (typeableRecordFields (Proxy :: _ ls))
-else instance typeableTag1 :: (TagT t, Typeable a) => Typeable (t a) where
+else instance typeableTag1 :: (Tagged t, Typeable a) => Typeable (t a) where
   typeRep = typeRepFromTag1
-else instance typeableTag0 :: TagT t => Typeable t where
-  typeRep = typeRepDefault0
+else instance typeableTag0 :: Tagged t => Typeable t where
+  typeRep = typeRepFromTag tag
 
-instance tagTFromTagT :: (TagT t, Typeable a) => TagT (t a) where
-  tagT = proxyTFromTagT
+instance tag1 :: (Tagged t, Typeable a) => Tagged (t a) where
+  tag = tag1Impl tag typeRep
 
 -- COMMON INSTANCES
 
@@ -169,8 +152,6 @@ data TypeRow r
 typeRowToTypeRep :: forall r rl. RL.RowToList r rl => TypeRow rl -> TypeRep (Record r)
 typeRowToTypeRep = typeRowToTypeRepImpl
 
--- HACK: For https://github.com/purescript/purescript/pull/4240
--- This doesn't depend on getting a reference to the dictionary so we don't need it in the FFI
 foreign import typeRowToTypeRepImpl :: forall r rl. TypeRow rl -> TypeRep (Record r)
 
 foreign import typeRowNil :: TypeRow RL.Nil
@@ -196,35 +177,35 @@ instance typeableRecordFieldsCons ::
     key = Proxy :: _ key
     tail = typeableRecordFields (Proxy :: _ rowlistTail)
 
-instance taggedInt :: TagT Int where
-  tagT = proxyT
+instance taggedInt :: Tagged Int where
+  tag = makeTag unit
 
-instance tagTBoolean :: TagT Boolean where
-  tagT = proxyT
+instance tagBoolean :: Tagged Boolean where
+  tag = makeTag unit
 
-instance tagTNumber :: TagT Number where
-  tagT = proxyT
+instance tagNumber :: Tagged Number where
+  tag = makeTag unit
 
-instance tagTChar :: TagT Char where
-  tagT = proxyT
+instance tagChar :: Tagged Char where
+  tag = makeTag unit
 
-instance tagTString :: TagT String where
-  tagT = proxyT
+instance tagString :: Tagged String where
+  tag = makeTag unit
 
-instance tagTUnit :: TagT Unit where
-  tagT = proxyT
+instance tagUnit :: Tagged Unit where
+  tag = makeTag unit
 
-instance taggedArray :: TagT Array where
-  tagT = proxyT
+instance taggedArray :: Tagged Array where
+  tag = makeTag unit
 
-instance taggedMaybe :: TagT Maybe where
-  tagT = proxyT
+instance taggedMaybe :: Tagged Maybe where
+  tag = makeTag unit
 
-instance tag2Func :: TagT (->) where
-  tagT = proxyT
+instance tag2Func :: Tagged (->) where
+  tag = makeTag unit
 
-instance tag2Either :: TagT Either where
-  tagT = proxyT
+instance tag2Either :: Tagged Either where
+  tag = makeTag unit
 
-instance tagTOrdering :: TagT Ordering where
-  tagT = proxyT
+instance tagOrdering :: Tagged Ordering where
+  tag = makeTag unit
