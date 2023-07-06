@@ -1,7 +1,6 @@
 // var _tag_id_counter = 1;
 
 export function typeRepDefault0Impl(t) {
-  // if(t.__uniqueId == undefined) t.__uniqueId = _tag_id_counter++;
   return t;
 }
 
@@ -21,9 +20,9 @@ export const proxyTFromTagTImpl = pack('tagT');
 function pack(tagName) {
   return function(origTag) {
     let unwrappedTag = origTag[tagName];
-    return function(dict) {
-      if (unwrappedTag.tag) return { tag: unwrappedTag.tag, args: unwrappedTag.args.concat(dict) };
-      return { tag: origTag, args: [dict] };
+    return function(typeRep) {
+      if (unwrappedTag.tag) return { tag: unwrappedTag.tag, args: unwrappedTag.args.concat(typeRep) };
+      return { tag: origTag, args: [typeRep] };
     };
   };
 };
@@ -54,7 +53,6 @@ export const typeRowNil = { record: [] };
 
 function eqTypeRepHelper(t1, t2) {
   if (t1.tagT) return t1 === t2;
-  if (t1.tag !== t2.tag) return false;
   if (t1.record) {
     if (!t2.record) return false;
     if (t1.record.length !== t2.record.length) return false;
@@ -67,7 +65,7 @@ function eqTypeRepHelper(t1, t2) {
   if (!t1.args) return false;
   if (t1.args.length !== t2.args.length) return false;
   for (var i = 0; i < t1.args.length; i++) {
-    if (!eqTypeRepHelper(t1.args[i].typeRep, t2.args[i].typeRep)) return false;
+    if (!eqTypeRepHelper(t1.args[i], t2.args[i])) return false;
   }
   return true;
 }

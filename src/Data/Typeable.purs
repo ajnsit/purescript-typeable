@@ -49,9 +49,6 @@ class Typeable :: forall k. k -> Constraint
 class Typeable a where
   typeRep :: TypeRep a
 
-data TypeableDict :: forall k. k -> Type
-data TypeableDict a
-
 instance showTypeRepInstance :: Show (TypeRep a) where
   show t = showTypeRep t
 
@@ -111,27 +108,23 @@ eqSomeTypeRep s1 s2 = unwrapSomeTypeRep s1 \t1 -> unwrapSomeTypeRep s2 \t2 -> eq
 
 -- MACHINERY + INSTANCES
 
+-- Coerce must have a type sig, and must not be inlined else it won't get passed the dicts
+coerceTagDict :: forall a r. (TagTDict a -> r) -> (TagT a => r)
+coerceTagDict = unsafeCoerce
+
 -- HACK: For https://github.com/purescript/purescript/pull/4240
 typeRepDefault0 :: forall a. TagT a => TypeRep a
-typeRepDefault0 = coerce typeRepDefault0Impl
-  where
-  -- Coerce must have a type sig, and must not be inlined else it won't get passed the dicts
-  coerce :: (TagTDict a -> TypeRep a) -> (TagT a => TypeRep a)
-  coerce = unsafeCoerce
+typeRepDefault0 = coerceTagDict typeRepDefault0Impl
 
 -- typeRepDefaultImpl :: forall a. TagT a => TypeRep a
 foreign import typeRepDefault0Impl :: forall a. TagTDict a -> TypeRep a
 
 -- HACK: For https://github.com/purescript/purescript/pull/4240
 typeRepFromTag1 :: forall a b. TagT a => Typeable b => TypeRep (a b)
-typeRepFromTag1 = coerce typeRepFromTag1Impl
-  where
-  -- Coerce must have a type sig, and must not be inlined else it won't get passed the dicts
-  coerce :: (TagTDict a -> TypeableDict b -> TypeRep (a b)) -> (TagT a => Typeable b => TypeRep (a b))
-  coerce = unsafeCoerce
+typeRepFromTag1 = coerceTagDict typeRepFromTag1Impl typeRep
 
 -- typeRepFromTag1Impl :: forall a b. TagT a => Typeable b => TypeRep (a b)
-foreign import typeRepFromTag1Impl :: forall a b. TagTDict a -> TypeableDict b -> TypeRep (a b)
+foreign import typeRepFromTag1Impl :: forall a b. TagTDict a -> TypeRep b -> TypeRep (a b)
 
 foreign import showTypeRep :: forall a. TypeRep a -> String
 
@@ -153,14 +146,10 @@ data TagTDict t
 
 -- HACK: For https://github.com/purescript/purescript/pull/4240
 proxyTFromTagT :: forall t a. TagT t => Typeable a => ProxyT (t a)
-proxyTFromTagT = coerce proxyTFromTagTImpl
-  where
-  -- Coerce must have a type sig, and must not be inlined else it won't get passed the dicts
-  coerce :: (TagTDict t -> TypeableDict a -> ProxyT (t a)) -> (TagT t => Typeable a => ProxyT (t a))
-  coerce = unsafeCoerce
+proxyTFromTagT = coerceTagDict proxyTFromTagTImpl typeRep
 
 -- foreign import proxyTFromTagTImpl :: forall t a. TagT t => Typeable a => ProxyT (t a)
-foreign import proxyTFromTagTImpl :: forall t a. TagTDict t -> TypeableDict a -> ProxyT (t a)
+foreign import proxyTFromTagTImpl :: forall t a. TagTDict t -> TypeRep a -> ProxyT (t a)
 
 instance typeableRecord :: (RL.RowToList rs ls, TypeableRecordFields ls) => Typeable (Record rs) where
   typeRep = typeRowToTypeRep (typeableRecordFields (Proxy :: _ ls))
