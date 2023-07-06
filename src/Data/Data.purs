@@ -2,7 +2,7 @@ module Data.Data where
 
 import Control.Alt ((<|>))
 import Control.Alternative (empty)
-import Control.Applicative (pure)
+import Control.Applicative (class Applicative, pure)
 import Control.Bind (bind, (>>=))
 import Control.Category (identity, (<<<))
 import Control.Monad (class Monad)
@@ -19,7 +19,7 @@ import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Newtype (unwrap)
 import Data.Ordering (Ordering)
 import Data.Tuple (Tuple(..))
-import Data.Typeable (class TagT, class Typeable, cast)
+import Data.Typeable (class Typeable, cast)
 import Data.Unit (Unit)
 import Unsafe.Coerce (unsafeCoerce)
 
@@ -29,7 +29,7 @@ mkT f = fromMaybe identity (cast f)
 mkQ :: forall a b r. Typeable a => Typeable b => r -> (b -> r) -> a -> r
 mkQ r q a = maybe r q (cast a)
 
-mkM :: forall a b m. Typeable a => Typeable b => Monad m => TagT m => (b -> m b) -> a -> m a
+mkM :: forall a b m. Typeable a => Typeable b => Typeable (m a) => Typeable (m b) => Applicative m => (b -> m b) -> a -> m a
 mkM f = fromMaybe pure (cast f)
 
 -- Purescript can't have cycles in typeclasses
@@ -225,18 +225,17 @@ unMp (Mp f) = f
 -- suitable for abstract datatypes with no substructures.
 -- gfoldl
 
--- TODO: Why do we need `TagT` here? Instead of `Typeable`.
-instance dataArray :: (TagT a, Data a) => Data (Array a) where
+instance dataArray :: Data a => Data (Array a) where
   dataDict = DataDict \k z arr -> case A.uncons arr of
     Nothing -> z []
     Just x -> (z A.cons `k` x.head) `k` x.tail
 
-instance dataMaybe :: (TagT a, Data a) => Data (Maybe a) where
+instance dataMaybe :: Data a => Data (Maybe a) where
   dataDict = DataDict \k z e -> case e of
     Nothing -> z Nothing
     Just a -> z Just `k` a
 
-instance dataEither :: (TagT a, TagT b, Data a, Data b) => Data (Either a b) where
+instance dataEither :: (Data a, Data b) => Data (Either a b) where
   dataDict = DataDict \k z e -> case e of
     Left a -> z Left `k` a
     Right b -> z Right `k` b

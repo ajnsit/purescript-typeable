@@ -69,15 +69,12 @@ gcast a = m # map \f -> runLeibniz f a
   where
   m = eqT (typeRep :: _ a) (typeRep :: _ b)
 
--- TODO: The following gives an Error with overlapping instances
---   The instance (Typeable (f a)) partially overlaps (Typeable (Record a)),
---   which means the rest of its instance chain will not be considered.
-gcast1 :: forall s t a c. Typeable a => TagT c => TagT s => TagT t => c (s a) -> Maybe (c (t a))
+gcast1 :: forall s t a c. Typeable (s a) => Typeable (t a) => c (s a) -> Maybe (c (t a))
 gcast1 a = m # map \f -> runLeibniz f a
   where
   m = eqT (typeRep :: _ (s a)) (typeRep :: _ (t a))
 
-gcast2 :: forall s t a b c. Typeable a => Typeable b => TagT c => TagT s => TagT t => c (s a b) -> Maybe (c (t a b))
+gcast2 :: forall s t a b c. Typeable (s a b) => Typeable (t a b) => c (s a b) -> Maybe (c (t a b))
 gcast2 a = m # map \f -> runLeibniz f a
   where
   m = eqT (typeRep :: _ (s a b)) (typeRep :: _ (t a b))
@@ -145,6 +142,8 @@ data ProxyT t
 
 foreign import proxyT :: forall t. ProxyT t
 
+-- | This class should only be used to specify instances for your own datatypes to automatically get Typeable instances
+-- | It's never necessary to use TagT as a constraint in order to use Typeable
 class TagT :: forall k. k -> Constraint
 class TagT a where
   tagT :: ProxyT a
@@ -163,10 +162,9 @@ proxyTFromTagT = coerce proxyTFromTagTImpl
 -- foreign import proxyTFromTagTImpl :: forall t a. TagT t => Typeable a => ProxyT (t a)
 foreign import proxyTFromTagTImpl :: forall t a. TagTDict t -> TypeableDict a -> ProxyT (t a)
 
--- instance typeableRecord :: (RL.RowToList rs ls, TypeableRecordFields ls) => Typeable (Record rs) where
---   typeRep = typeRowToTypeRep (typeableRecordFields (Proxy :: _ ls))
-instance typeableTag1 :: (TagT t, Typeable a) => Typeable (t a) where
-  -- else instance typeableTag1 :: (TagT t, Typeable a) => Typeable (t a) where
+instance typeableRecord :: (RL.RowToList rs ls, TypeableRecordFields ls) => Typeable (Record rs) where
+  typeRep = typeRowToTypeRep (typeableRecordFields (Proxy :: _ ls))
+else instance typeableTag1 :: (TagT t, Typeable a) => Typeable (t a) where
   typeRep = typeRepFromTag1
 else instance typeableTag0 :: TagT t => Typeable t where
   typeRep = typeRepDefault0

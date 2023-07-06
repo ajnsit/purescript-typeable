@@ -4,7 +4,7 @@ import Prelude
 
 import Control.Monad.Error.Class (class MonadThrow)
 import Data.Either (Either)
-import Data.Typeable (class TagT, eqTypeRep, proxyT, typeRep, typeRepFromVal)
+import Data.Typeable (class TagT, TypeRep, eqTypeRep, proxyT, typeRep, typeRepFromVal)
 import Effect (Effect)
 import Effect.Aff (launchAff_)
 import Effect.Exception (Error)
@@ -43,26 +43,26 @@ main = do
         assert $ eqTypeRep (typeRep :: _ (Either Int Person)) (typeRep :: _ (Either Int Person))
         assert $ eqTypeRep (typeRep :: _ (Array Person)) typeArrPerson
         deny $ eqTypeRep (typeRep :: _ (Array Person2)) typeArrPerson
-      -- it "can handle bare records" do
-      --   assert $ eqTypeRep typeRecord (typeRep :: _ { name :: String, age :: Int })
+      it "can handle bare records" do
+        assert $ eqTypeRep typeRecord (typeRep :: _ { name :: String, age :: Int })
       it "can generate type reps from values" do
         assert $ eqTypeRep (typeRep :: _ (Optional Int)) (typeRepFromVal (Some 1))
         deny $ eqTypeRep (typeRep :: _ (Optional Person)) (typeRepFromVal (Some 1))
 
--- clog (eqTypeRep (typeRep :: _ Int) (typeRep :: _ Char))
--- clog (eqTypeRep (typeRep :: _ Int) (typeRep :: _ Int))
--- clog (typeRep :: _ Char)
--- clog (typeRep :: _ Int)
+  -- clog (eqTypeRep (typeRep :: _ Int) (typeRep :: _ Char))
+  -- clog (eqTypeRep (typeRep :: _ Int) (typeRep :: _ Int))
+  -- clog (typeRep :: _ Char)
+  -- clog (typeRep :: _ Int)
 
--- clog (typeRep :: _ Array)
--- clog (typeRep :: _ { name :: String, age :: Int })
--- clog (typeRep :: _ (Int -> Either (Either Int Int) (Optional (Array (Person)))))
--- clog (typeRep :: _ (Either (Either Int Int) (Optional (Array (Person)))))
--- clog (typeRep :: _ (Either Int Int))
+  -- clog (typeRep :: _ Array)
+  -- clog (typeRep :: _ { name :: String, age :: Int })
+  -- clog (typeRep :: _ (Int -> Either (Either Int Int) (Optional (Array (Person)))))
+  -- clog (typeRep :: _ (Either (Either Int Int) (Optional (Array (Person)))))
+  -- clog (typeRep :: _ (Either Int Int))
 
--- where
--- typeRecord :: TypeRep { age :: Int, name :: String }
--- typeRecord = typeRep
+  where
+  typeRecord :: TypeRep { age :: Int, name :: String }
+  typeRecord = typeRep
 
 -- -- A data type without a typeable instance
 -- data Break
