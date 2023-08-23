@@ -49,7 +49,7 @@ For example -
 ```purescript
 data Person = Person {name::String, age::Int}
 
-instance Taggable Person where tag = makeTag unit
+instance Tagged Person where tag = makeTag unit
 ```
 
 This is valid even for data types that take parameters. For example -
@@ -57,7 +57,7 @@ This is valid even for data types that take parameters. For example -
 ```purescript
 data Optional a = Some a | None
 
-instance Taggable Optional where tag = makeTag unit
+instance Tagged Optional where tag = makeTag unit
 ```
 
 **Don't worry about getting it wrong since the type system will prevent you from writing an invalid instance.**
